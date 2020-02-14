@@ -13,25 +13,28 @@ file is modified based on the **main.py**
 ## Question 1 Proof:
 In the multi-class logistic regression, the entropy loss function is:
 
-$$Loss = -\sum_{k}^ny_k\log \hat{y_k} $$
 
- The predicted value is:
+![](https://latex.codecogs.com/gif.latex?$$Loss = -\sum_{k}^ny_k\log \hat{y_k}$$)
 
-$$\hat{y_k} = \frac{e^{o_k}}{\sum_{i}{e^{o_i}}}$$
+The predicted value is:
+ 
+
+![](https://latex.codecogs.com/gif.latex?$$\hat{y_k} = \frac{e^{o_k}}{\sum_{i}{e^{o_i}}}$$)
+
 where $o_i = W_iz$ given the $z$ is the input vector to the GLM layer, $W$ is the matrix containing the associated weight vectors.
 The Derivative of the predicted value is:
 
 
-
+![](https://latex.codecogs.com/gif.latex?
 $$
 \begin{aligned}
 \frac{\partial \hat{y_k}}{\partial o_i} 
 &= \frac{\partial }{\partial o_i}\left(\frac{e^{o_k}}{\sum_{i}{e^{o_i}}}\right) \\\\
-
 &= \frac{\frac {\partial e^{o_k}} {\partial o_i} \cdot \sum_{i}{e^{o_i}} - e^{o_k} \cdot e^{o_i}}{\left(\sum_{i}{e^{o_i}}\right)^2} \\\\
-
 \end{aligned}
-$$
+$$)
+
+
 
 when $i=k$, $\frac {\partial e^{o_k}} {\partial o_i} = e^{o_k}$,
 
@@ -39,16 +42,18 @@ when $i \neq k$, $\frac {\partial e^{o_k}} {\partial o_i} = 0$:
 
 Thus 
 
+![](https://latex.codecogs.com/gif.latex?
 $$
 \frac{\partial \hat{y_k}}{\partial o_i} = 
 \begin{cases}
     \hat{y_k}(1-\hat{y_k}),\quad i = k \\
     -\hat{y_k}\hat{y_i},\quad i \neq k
 \end{cases}
-$$
+$$)
  
 Combined with Loss function:
 
+![](https://latex.codecogs.com/gif.latex?
 $$
 \begin{aligned}
 \frac {\partial Loss}{\partial o_i}
@@ -60,16 +65,17 @@ $$
 & = \hat{y_i}(\sum_{k}y_k) -y_i \\
 & = \hat{y_i} - y_i
 \end{aligned}
-$$
+$$)
 
 Given that $\frac {\partial o_i}{\partial W_i} = z$, we can get 
 
+![](https://latex.codecogs.com/gif.latex?
 $$
 \begin{aligned}
 \frac{\partial Loss}{\partial W} = 
 \frac{\partial Loss}{\partial o_i} \frac{\partial o_i}{\partial W_i} =(\hat{y_i} - y_i)z
 \end{aligned}
-$$
+$$)
 
 ## Question 2:
 ### sub-question viii
