@@ -2,6 +2,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from datetime import datetime
 
 
 class FNNModel(nn.Module):
@@ -18,13 +19,28 @@ class FNNModel(nn.Module):
             self.decoder.weight = self.encoder.weight
         self.softmax = nn.Softmax(dim=1)
         self.init_weights()
+        self.time_encoder = 0
+        self.time_hidden = 0
+        self.time_decoder = 0
+        self.time_softmax = 0
 
     def forward(self, input,):
+        time = datetime.now()
         output = self.drop(self.encoder(input))
+        self.time_encoder += (datetime.now() - time).microseconds
+
+        time = datetime.now()
         output = self.fc1(output)
         output = self.tanh(output)
+        self.time_hidden += (datetime.now() - time).microseconds
+
+        time = datetime.now()
         output = self.decoder(output)
+        self.time_decoder += (datetime.now() - time).microseconds
+
+        time = datetime.now()
         output = self.softmax(output)
+        self.time_softmax += (datetime.now() - time).microseconds
         return output
 
     def init_weights(self):

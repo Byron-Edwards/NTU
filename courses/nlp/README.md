@@ -70,7 +70,7 @@ $$
 
 ### sub-question viii
 
-According to the snapshot of the trainnig timer, we can know that the time cost on the backward is the most
+The most time consuming step in the feed-forward should be the softmax computation, but in the reality the softmax step cost least time, please refer to the following snapshot
 ![Training Timer](./snapshot.png)
 
 ### sub-question ix
@@ -79,5 +79,8 @@ Please refer to **spearmanr.csv** for the result
 
 ## Question 3
 
-If the student are familiar with the machine learning, deep learning, python and pytorch, i guess it would take about one day to complete the assignment 
+If the student are familiar with the machine learning, deep learning, python and pytorch, i guess it would take about one day to complete the assignment.
+
 If the student has no idea of the above baisc knowledge, the time cost on the assignment would be much more longer, because it require student to pick up everything, probably would cost around a week (just finish the assignment, may not be understand the concept of the Embedding, FNN, RNN, pytorch etc.)
+
+But From my personal perspective, the assignment should be really challengable and pratical to student. I personally hope the following assignment or project could lead us to build a workable and meaningful model.

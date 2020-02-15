@@ -146,32 +146,18 @@ def train():
     # record every steps time
     # record time for every step
     start_time = datetime.now()
-    time_forward = 0
-    time_loss = 0
-    time_backward = 0
-    time_update = 0
+
     ntokens = len(corpus.dictionary)
     for batch, i in enumerate(range(0, train_data.size(0) - 1, args.bptt)):
         data, targets = get_batch(train_data, i)
         # Starting each batch, we detach the hidden state from how it was previously produced.
         # If we didn't, the model would try backpropagating all the way to start of the dataset.
         optimizer.zero_grad()
-
-        time = datetime.now()
         output = model(data)
-        time_forward += (datetime.now() - time).microseconds
-
-        time = datetime.now()
         loss = criterion(output.view(-1, ntokens), targets)
-        time_loss += (datetime.now() - time).microseconds
-
-        time = datetime.now()
         loss.backward()
-        time_backward += (datetime.now() - time).microseconds
-
-        time = datetime.now()
         optimizer.step()
-        time_update += (datetime.now() - time).microseconds
+
         # # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
         # torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
         # for p in model.parameters():
@@ -188,8 +174,8 @@ def train():
                 elapsed/ args.log_interval, cur_loss, math.exp(cur_loss)))
             total_loss = 0
             start_time = datetime.now()
-    print("Forward Time: {}s, Loss Compute Time: {}s, Backward Time: {}s, Weight update Time:{}s"
-          .format(time_forward/1e6,time_loss/1e6,time_backward/1e6,time_update/1e6))
+    print("Total Encoder Time: {}s, Hidden Layer Time: {}s, Decoder Time: {}s, Softmax Time:{}s"
+          .format(model.time_encoder/1e6,model.time_hidden/1e6,model.time_decoder/1e6,model.time_softmax/1e6))
 
 
 def export_onnx(path, batch_size, seq_len):
