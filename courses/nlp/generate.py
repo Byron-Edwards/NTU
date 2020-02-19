@@ -20,7 +20,7 @@ parser.add_argument('--checkpoint', type=str, default='./model.pt',
                     help='model checkpoint to use')
 parser.add_argument('--outf', type=str, default='generated.txt',
                     help='output file for generated text')
-parser.add_argument('--words', type=int, default='10',
+parser.add_argument('--words', type=int, default='500',
                     help='number of words to generate')
 parser.add_argument('--seed', type=int, default=1111,
                     help='random seed')
@@ -55,35 +55,29 @@ ntokens = len(corpus.dictionary)
 #     hidden = model.init_hidden(1)
 # input = torch.randint(ntokens, (1, 1), dtype=torch.long).to(device)
 
-with open(args.outf, 'w') as outf:
+with open(args.outf, 'w',encoding='utf-8') as outf:
     with torch.no_grad():  # no tracking history
         print('-' * 89)
-        input = input('Please input your words: ')
+        input_vector = input('Please input your words: ')
+        if len(input_vector) == 0:
+            input_vector = "You will never know what happened here"
         outf.write('-' * 45 + 'Your input' + '-' * 45 + "\n")
-        outf.write(input + " \n")
+        outf.write(input_vector + " \n")
         outf.write('-' * 45 + 'Your input' + '-' * 45 + "\n")
-        input = torch.tensor([corpus.dictionary.word2idx[i] for i in input.split()], dtype=torch.long).unsqueeze(
-            dim=1).to(device)
+        input_vector = torch.tensor([corpus.dictionary.word2idx[i] for i in input_vector.split()], dtype=torch.long).unsqueeze(dim=0).to(device)[:,-model.ngram:]
         output_word = ""
         for i in range(args.words):
             # if is_transformer_model:
-            output = model(input)
+            output = model(input_vector)
             word_weights = output[-1].squeeze().div(args.temperature).exp().cpu()
             word_idx = torch.multinomial(word_weights, 1)[0]
             word_tensor = torch.Tensor([[word_idx]]).long().to(device)
-            input = torch.cat([input, word_tensor], 0)
-            # else:
-            #     output, hidden = model(input, hidden)
-            #     word_weights = output.squeeze().div(args.temperature).exp().cpu()
-            #     word_idx = torch.multinomial(word_weights, 1)[0]
-            #     temp = input.clone()
-            #     # input.fill_(word_idx)
-            #     input = torch.cat((temp,torch.tensor([[word_idx]]).to(device)),dim= 0)
+            input_vector = torch.cat([input_vector, word_tensor], 1)[:,-model.ngram:]
 
             word = corpus.dictionary.idx2word[word_idx]
             output_word = output_word + " " + word
-
             outf.write(word + ('\n' if i % 20 == 19 else ' '))
+            
 
             if i % args.log_interval == 0:
                 print('| Generated {}/{} words'.format(i, args.words))

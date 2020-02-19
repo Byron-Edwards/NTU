@@ -30,6 +30,8 @@ class Corpus(object):
         # Add words to the dictionary
         with open(path, 'r', encoding="utf8") as f:
             for line in f:
+                if line.strip() == 0:
+                    continue
                 words = line.split() + ['<eos>']
                 for word in words:
                     self.dictionary.add_word(word)

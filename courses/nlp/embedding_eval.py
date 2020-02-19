@@ -2,6 +2,7 @@ import pandas as pd
 import torch
 import data
 from scipy.stats import spearmanr
+from scipy import spatial
 import argparse
 parser = argparse.ArgumentParser(description='PyTorch Wikitext-2 Language Model to calculate word pair similarity')
 
@@ -45,10 +46,15 @@ with torch.no_grad():
     out = torch.tensor(dt.values,dtype = torch.long)
     out = model.encoder(out.cuda()).cpu().numpy()
     corr = []
+    cos = []
     for i in out:
         corr.append(spearmanr(i[0],i[1]).correlation)
+        cos.append(1 - spatial.distance.cosine(i[0],i[1]))
     dt["Spearmanr"] = corr
+    dt["Cosin"] = cos
 out = raw_dt.merge(dt["Spearmanr"],how='outer',right_index=True,left_index=True)
+out = out.merge(dt["Cosin"],how='outer',right_index=True,left_index=True)
+print(out[["Human (mean)","Spearmanr","Cosin"]].corr(method= "spearman"))
 out.to_csv(args.out,index=False)
 
 

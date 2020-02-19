@@ -7,7 +7,6 @@ import os
 import torch
 import torch.nn as nn
 import torch.onnx
-
 import data
 import model
 
@@ -20,17 +19,19 @@ parser.add_argument('--emsize', type=int, default=200,
                     help='size of word embeddings')
 parser.add_argument('--nhid', type=int, default=200,
                     help='number of hidden units per layer')
+parser.add_argument('--ngrams', type=int, default=6,
+                    help='number of previous word for training')
 # parser.add_argument('--nlayers', type=int, default=2,
 #                     help='number of layers')
-parser.add_argument('--lr', type=float, default=20,
+parser.add_argument('--lr', type=float, default=0.1,
                     help='initial learning rate')
 # parser.add_argument('--clip', type=float, default=0.25,
 #                     help='gradient clipping')
 parser.add_argument('--epochs', type=int, default=40,
                     help='upper epoch limit')
-parser.add_argument('--batch_size', type=int, default=20, metavar='N',
+parser.add_argument('--batch_size', type=int, default=1000, metavar='N',
                     help='batch size')
-parser.add_argument('--bptt', type=int, default=35,
+parser.add_argument('--bptt', type=int, default=1,
                     help='sequence length')
 parser.add_argument('--dropout', type=float, default=0.2,
                     help='dropout applied to layers (0 = no dropout)')
@@ -84,7 +85,8 @@ def batchify(data, bsz):
     # Trim off any extra elements that wouldn't cleanly fit (remainders).
     data = data.narrow(0, 0, nbatch * bsz)
     # Evenly divide the data across the bsz batches.
-    data = data.view(bsz, -1).t().contiguous()
+    # data = data.view(bsz, -1).t().contiguous()
+    data = data.view(nbatch, -1).contiguous()
     return data.to(device)
 
 eval_batch_size = 10
@@ -97,31 +99,28 @@ test_data = batchify(corpus.test, eval_batch_size)
 ###############################################################################
 
 ntokens = len(corpus.dictionary)
-model = model.FNNModel(ntokens, args.emsize, args.nhid, args.dropout, tie_weights=True).to(device)
+model = model.FNNModel(ntokens, args.ngrams,args.emsize, args.nhid, args.dropout, tie_weights=args.tied).to(device)
 model = nn.DataParallel(model).to(device)
 model = model.module
-
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
 ###############################################################################
 # Training code
 ###############################################################################
 
-# get_batch subdivides the source data into chunks of length args.bptt.
-# If source is equal to the example output of the batchify function, with
-# a bptt-limit of 2, we'd get the following two Variables for i = 0:
-# ┌ a g m s ┐ ┌ b h n t ┐
-# └ b h n t ┘ └ c i o u ┘
-# Note that despite the name of the function, the subdivison of data is not
-# done along the batch dimension (i.e. dimension 1), since that was handled
-# by the batchify function. The chunks are along dimension 0, corresponding
-# to the seq_len dimension in the LSTM.
+# def get_batch(source, i):
+#     seq_len = min(args.bptt, len(source) - 1 - i)
+#     data = source[i:i+seq_len]
+#     target = source[i+1:i+1+seq_len].view(-1)
+#     return data, target
 
-
-def get_batch(source, i):
-    seq_len = min(args.bptt, len(source) - 1 - i)
-    data = source[i:i+seq_len]
-    target = source[i+1:i+1+seq_len].view(-1)
+def get_batch(source,i,steps=1):
+    batch_data = source[i]
+    data = batch_data[0:-1].unfold(0,args.ngrams,steps)
+    target = batch_data[args.ngrams:].unfold(0,1,steps)
+    shuffle = torch.randperm(data.size()[0])
+    data = data[shuffle]
+    target = target[shuffle].view(-1)
     return data, target
 
 
@@ -131,7 +130,7 @@ def evaluate(data_source):
     total_loss = 0.
     ntokens = len(corpus.dictionary)
     with torch.no_grad():
-        for i in range(0, data_source.size(0) - 1, args.bptt):
+        for i in range(data_source.size(0) - 1):
             data, targets = get_batch(data_source, i)
             output = model(data)
             output_flat = output.view(-1, ntokens)
@@ -146,31 +145,23 @@ def train():
     # record every steps time
     # record time for every step
     start_time = datetime.now()
-
+    inbatch_step = torch.randint(args.ngrams,(1,1)).item()
     ntokens = len(corpus.dictionary)
-    for batch, i in enumerate(range(0, train_data.size(0) - 1, args.bptt)):
-        data, targets = get_batch(train_data, i)
-        # Starting each batch, we detach the hidden state from how it was previously produced.
-        # If we didn't, the model would try backpropagating all the way to start of the dataset.
+    for batch, i in enumerate(range(train_data.size(0) - 1)):
+        data, targets = get_batch(train_data, i,steps=inbatch_step)
         optimizer.zero_grad()
         output = model(data)
         loss = criterion(output.view(-1, ntokens), targets)
         loss.backward()
         optimizer.step()
-
-        # # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
-        # torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
-        # for p in model.parameters():
-        #     p.data.add_(-lr, p.grad.data)
-
         total_loss += loss.item()
 
         if batch % args.log_interval == 0 and batch > 0:
             cur_loss = total_loss / args.log_interval
             elapsed = (datetime.now() - start_time).microseconds/1000
-            print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
+            print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.10f} | ms/batch {:5.2f} | '
                     'loss {:5.2f} | ppl {:8.2f}'.format(
-                epoch, batch, len(train_data) // args.bptt, lr,
+                epoch, batch, train_data.size(0), lr,
                 elapsed/ args.log_interval, cur_loss, math.exp(cur_loss)))
             total_loss = 0
             start_time = datetime.now()
@@ -210,7 +201,7 @@ try:
             with open(args.save, 'wb') as f:
                 torch.save(model, f)
             best_val_loss = val_loss
-        else:
+        elif best_val_loss <= 1.05*val_loss:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
             lr /= 4.0
 except KeyboardInterrupt:
