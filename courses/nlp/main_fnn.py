@@ -145,7 +145,7 @@ def train():
     # record every steps time
     # record time for every step
     start_time = datetime.now()
-    inbatch_step = torch.randint(args.ngrams,(1,1)).item()
+    inbatch_step = torch.randint(1,args.ngrams,(1,1)).item()
     ntokens = len(corpus.dictionary)
     for batch, i in enumerate(range(train_data.size(0) - 1)):
         data, targets = get_batch(train_data, i,steps=inbatch_step)
