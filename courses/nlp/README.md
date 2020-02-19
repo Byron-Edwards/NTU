@@ -82,7 +82,8 @@ The most time consuming step in the feed-forward should be the softmax computati
 
 ### sub-question (ix)
 
-For the code please refer to [embedding_eval.py](./embedding_eval.py) For the result Please refer to [spearmanr.csv](./spearmanr.csv), please note that the empty spearman for some word pair mean one or both of them did not show in the data/dictionary
+For the code please refer to [embedding_eval.py](./embedding_eval.py) For the result Please refer to [spearmanr.csv](./spearmanr.csv), please note that the empty spearman for some word pair mean one or both of them did not show in the data/dictionary. The Spearman correlation between the Human Mean and Cosine similarity is as following:
+![Spearman](./Spearman.png)
 
 ## Question 3
 
