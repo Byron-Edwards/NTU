@@ -88,9 +88,17 @@ Training Time 2806 s
 
 ## Models
 
-The following are the cnn model used for assignment, For the details please refer to [Model.py](Model.py)
+The following are the cnn model and key data process used before and after cnn, For the details please refer to [Model.py](Model.py)
 
 ```python
+# transform the data into the format of CNN
+embeds = embeds.unsqueeze(0).unsqueeze(0)
+embeds = self.dropout(embeds)
+lstm_out = self.cnn(embeds)
+# Transpose and reshape data for the later process
+lstm_out = lstm_out.permute(2, 0, 1, 3).view(len(sentence)*lstm_out.size(0),self.hidden_dim*2)
+
+# Model Part
 if self.multi_cnn == 2:
     self.cnn = nn.Sequential(
         nn.Conv2d(in_channels=1, out_channels=hidden_dim,
