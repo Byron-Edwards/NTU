@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from torch.autograd import Variable
 
-from Paramters import *
+from Parameters import *
 from data_prepare import get_chunks
 
 

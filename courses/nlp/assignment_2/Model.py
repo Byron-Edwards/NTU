@@ -2,7 +2,7 @@ import numpy as np
 import torch.nn as nn
 import torch.autograd as autograd
 from torch.autograd import Variable
-from Paramters import *
+from Parameters import *
 
 
 class BiLSTM_CRF(nn.Module):

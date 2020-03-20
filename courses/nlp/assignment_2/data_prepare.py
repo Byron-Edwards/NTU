@@ -1,6 +1,6 @@
 import codecs
 import re
-from Paramters import *
+from Parameters import *
 
 
 def zero_digits(s):
