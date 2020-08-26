@@ -79,7 +79,7 @@ Validation dataset is a dataset of examples used to tune the hyperparameters (i.
 
 ## Question 4
 
-Flatten the input into vector:
+Flatten the input into vector by the row:
 $$
 input = 
  \begin{pmatrix}
@@ -91,18 +91,18 @@ input =
   \begin{pmatrix}
    10 \\
    10 \\
-   10 \\
-   10 \\
-   10 \\
-   10 \\
+   0 \\
+   0 \\
    10 \\
    10 \\
    0 \\
    0 \\
+   10 \\
+   10 \\
    0 \\
    0 \\
-   0 \\
-   0 \\
+   10 \\
+   10 \\
    0 \\
    0 \\
   \end{pmatrix}
@@ -117,8 +117,10 @@ kernel =
    -1 & 0 & 1 \\
   \end{pmatrix}     = 
   \begin{pmatrix}
-   -1 & 0 & 1 & 0 & -2 & 0 & 2 & 0 & -1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
-    0  & -1 & 0 & 1 & 0 & -2 & 0 & 2 & 0 & -1 & 0 & 1 & 0 & 0 & 0 & 0 \\
+   -1 & 0  & 1  & 0 & -2 & 0 & 2 & 0 & -1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
+    0 & -1 & 0  & 1 & 0 & -2 & 0 & 2 & 0 & -1 & 0 & 1 & 0 & 0 & 0 & 0 \\
+    0 & 0  & 0 & 0  & -1 & 0 & 1 & 0 & -2 & 0 & 2 & 0 & -1 & 0 & 1 & 0\\
+    0 & 0 & 0  & 0 & 0  & -1 & 0 & 1 & 0 & -2 & 0 & 2 & 0 & -1 & 0 & 1 \\
   \end{pmatrix}
 $$
 
