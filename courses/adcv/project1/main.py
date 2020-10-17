@@ -34,8 +34,8 @@ model_names = sorted(name for name in models.__dict__
 
 # Parse arguments
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
-parser.add_argument('-d', '--data', default='path to dataset', type=str)
-parser.add_argument('--arch', '-a', metavar='ARCH', default='resnet18',
+parser.add_argument('-d', '--data', default='.', type=str)
+parser.add_argument('--arch', '-a', metavar='ARCH', default='resnet50',
                     choices=model_names,
                     help='model architecture: ' +
                         ' | '.join(model_names) +
@@ -80,6 +80,10 @@ parser.add_argument('--groups', type=int, default=3, help='ShuffleNet model grou
 parser.add_argument('--manual-seed', type=int, help='manual seed')
 parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
                     help='evaluate model on validation set')
+parser.add_argument('-pt', '--private_test', dest='private_test', action='store_true',
+                    help='evaluate model on private test data')
+parser.add_argument('--out', default="predictions.txt",
+                    help='private_test')
 parser.add_argument('--pretrained', dest='pretrained', action='store_true',
                     help='use pre-trained model')
 parser.add_argument('--world-size', default=1, type=int,
@@ -221,6 +225,17 @@ def main():
 
     if args.evaluate:
         validate(test_loader, model, criterion)
+        return
+
+    if args.private_test:
+        private_loader = torch.utils.data.DataLoader(
+            CelebA(args.data, 'testset', transforms.Compose([
+                transforms.ToTensor(),
+                normalize,
+            ]),test=True),
+            batch_size=args.test_batch, shuffle=False,
+            num_workers=args.workers, pin_memory=True)
+        test(private_loader, model, criterion)
         return
 
     # visualization
@@ -415,6 +430,29 @@ def adjust_learning_rate(optimizer, epoch):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
     return lr
+
+
+def test(test_loader, model, criterion):
+    # switch to evaluate mode
+    model.eval()
+    outfile_path = os.path.join(args.checkpoint, args.out)
+    if os.path.isfile(outfile_path):
+        os.remove(outfile_path)
+    outfile = open(outfile_path, 'a')
+    with torch.no_grad():
+        for i, (input, image_name) in enumerate(test_loader):
+            # compute output
+            output = model(input)
+            # get predictions
+            outlist = [[] for _ in range(len(output[0]))]
+            for i in range(len(output)):
+                outlist_i = list(output[i].cpu().numpy())
+                for j in range(len(outlist_i)):
+                    outlist[j].append(
+                        str(1 if outlist_i[j][0] < outlist_i[j][1] else -1))
+            for k in range(len(outlist)):
+                outfile.write("{img} {result}\n".format(
+                    img=image_name[k], result=' '.join(outlist[k])))
 
 
 if __name__ == '__main__':
